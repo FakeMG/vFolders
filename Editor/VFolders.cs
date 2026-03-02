@@ -17,6 +17,14 @@ using static VFolders.Libs.VGUI;
 using static VFolders.VFoldersData;
 using static VFolders.VFoldersCache;
 
+#if UNITY_6000_3_OR_NEWER
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<UnityEngine.EntityId>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<UnityEngine.EntityId>;
+#elif UNITY_6000_2_OR_NEWER
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<int>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
+
 
 
 namespace VFolders
@@ -83,7 +91,7 @@ namespace VFolders
                 var maxScrollPos = 20;
 
 
-                var scrollPos = window.GetMemberValue(isOneColumn ? "m_AssetTree" : "m_FolderTree").GetMemberValue<UnityEditor.IMGUI.Controls.TreeViewState>("state").scrollPos.y;
+                var scrollPos = window.GetMemberValue(isOneColumn ? "m_AssetTree" : "m_FolderTree").GetMemberValue<TreeViewState>("state").scrollPos.y;
 
                 var opacity = ((scrollPos - minScrollPos) / (maxScrollPos - minScrollPos)).Clamp01();
 
@@ -374,7 +382,7 @@ namespace VFolders
         }
         static void ItemGUI_2022_1_and_newer(int instanceId, Rect itemRect)
         {
-            var guid = AssetDatabase.GetAssetPath(instanceId).ToGuid();
+            var guid = _AssetDatabase_GetAssetPath(instanceId).ToGuid();
 
             ItemGUI(itemRect, guid, instanceId);
 
@@ -1563,6 +1571,20 @@ namespace VFolders
 
         static MethodInfo mi_WrappedBrowserOnGUI = typeof(VFolders).GetMethod(nameof(WrappedBrowserOnGUI), maxBindingFlags);
         static MethodInfo mi_VFavorites_WrappedOnGUI = t_VFavorites?.GetMethod("WrappedOnGUI", maxBindingFlags) ?? t_VFavorites?.GetMethod("OnGUI", maxBindingFlags);
+
+#if UNITY_6000_3_OR_NEWER
+        public static EntityId ToIdType(this int id) => id;
+        public static List<int> ToInts(this List<EntityId> ids) => ids.Select(r => (int)r).ToList();
+        public static List<int> GetIdList(this object o, string listName) => o.GetMemberValue<List<EntityId>>(listName)?.ToInts();
+        public static int ToIntId(this object idValue) => idValue switch { EntityId entityId => entityId, int intId => intId, _ => 0 };
+        public static EntityId[] ToIdTypeArray(this IEnumerable<int> ids) => ids.Select(id => id.ToIdType()).ToArray();
+#else
+        public static int ToIdType(this int id) => id;
+        public static List<int> ToInts(this List<int> ids) => ids;
+        public static List<int> GetIdList(this object o, string listName) => o.GetMemberValue<List<int>>(listName);
+        public static int ToIntId(this object idValue) => idValue is int intId ? intId : 0;
+        public static int[] ToIdTypeArray(this IEnumerable<int> ids) => ids.ToArray();
+#endif
 
 
 

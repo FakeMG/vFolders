@@ -18,6 +18,14 @@ using static VFolders.VFolders;
 using static VFolders.VFoldersData;
 using static VFolders.VFoldersCache;
 
+#if UNITY_6000_3_OR_NEWER
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<UnityEngine.EntityId>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<UnityEngine.EntityId>;
+#elif UNITY_6000_2_OR_NEWER
+using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<int>;
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
+
 
 
 namespace VFolders
@@ -87,7 +95,7 @@ namespace VFolders
                     if (treeItem != null) return;
                     if (isFavorite || isFavoritesRoot) return;
 
-                    treeItem = treeViewController?.InvokeMethod<TreeViewItem>("FindItem", instanceId);
+                    treeItem = treeViewController?.InvokeMethod<TreeViewItem>("FindItem", instanceId.ToIdType());
 
                 }
 
@@ -626,11 +634,11 @@ namespace VFolders
                                                Selection.objects.Where(r => r is DefaultAsset).Select(r => r.GetPath().ToGuid())
                                                :
 #if UNITY_2021_1_OR_NEWER
-                                               treeViewController.GetFieldValue("m_CachedSelection").GetFieldValue<List<int>>("m_List")
+                                               treeViewController.GetFieldValue("m_CachedSelection").GetIdList("m_List")
 #else
                                                treeViewController?.GetMemberValue("state").GetMemberValue<List<int>>("selectedIDs")
 #endif
-                                 .Select(id => treeViewController.InvokeMethod("FindItem", id))
+                                 .Select(id => treeViewController.InvokeMethod("FindItem", id.ToIdType()))
                                  .Where(r => r?.GetType().Name == "FolderTreeItem")
                                  .Select(r => r.GetPropertyValue<string>("Guid"))
                                  .Where(r => r != null);
@@ -732,7 +740,7 @@ namespace VFolders
                     if (!VFoldersMenu.twoLineNamesEnabled) return;
 
 
-                    var isSelected = listArea_dragSelectionList.Any() ? listArea_dragSelectionList.Contains(instanceId) : Selection.instanceIDs.Contains(instanceId);
+                    var isSelected = listArea_dragSelectionList.Any() ? listArea_dragSelectionList.Contains(instanceId) : _Selection_instanceIDs.Contains(instanceId);
 
                     var isCellBeingRenamed = isSelected && renamingCell;
 
@@ -1110,7 +1118,7 @@ namespace VFolders
 
             var treeViewState = treeViewController?.GetPropertyValue<TreeViewState>("state");
 
-            expandedIds = treeViewState?.expandedIDs ?? new List<int>();
+            expandedIds = treeViewState?.expandedIDs.ToInts() ?? new();
 
 
 
@@ -1140,8 +1148,8 @@ namespace VFolders
 
 
             listArea_dragSelectionList = listArea?.GetMemberValue("m_LocalAssets")?.GetMemberValue<List<int>>("m_DragSelection") ?? new();
-            treeView_dragSelectionList = treeViewController?.GetFieldValue("m_DragSelection")?.GetFieldValue<List<int>>("m_List") ?? new();
-            treeView_normalSelectionList = isTwoColumns ? treeViewController?.GetFieldValue("m_CachedSelection")?.GetFieldValue<List<int>>("m_List") ?? new() : null;
+            treeView_dragSelectionList = treeViewController?.GetFieldValue("m_DragSelection")?.GetIdList("m_List") ?? new();
+            treeView_normalSelectionList = isTwoColumns ? treeViewController?.GetFieldValue("m_CachedSelection")?.GetIdList("m_List") ?? new() : null;
 
 
             // only treeView_normalSelectionList must be updated in repaint, the rest can be moved to UpdateState_Layout

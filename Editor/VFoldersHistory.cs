@@ -18,6 +18,12 @@ using static VFolders.VFolders;
 using static VFolders.VFoldersData;
 using static VFolders.VFoldersCache;
 
+#if UNITY_6000_3_OR_NEWER
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<UnityEngine.EntityId>;
+#elif UNITY_6000_2_OR_NEWER
+using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
+#endif
+
 
 
 namespace VFolders
@@ -219,7 +225,7 @@ namespace VFolders
 
             currentScrollPos = treeViewControllerState?.scrollPos.y ?? 0;
 
-            expandedIds = treeViewControllerState?.expandedIDs ?? new List<int>();
+            expandedIds = treeViewControllerState?.expandedIDs.ToInts() ?? new();
 
 
 
@@ -230,7 +236,7 @@ namespace VFolders
 
             treeViewAnimatesExpansion = treeViewAnimator.GetMemberValue<bool>("isAnimating");
             animatingItemTragetExpanded_fromTreeViewExpandAnimator = treeViewAnimatorSetup?.GetMemberValue<bool>("expanding") ?? false;
-            animatingItemId_fromTreeViewExpandAnimator = treeViewAnimatorSetup?.GetMemberValue("item").GetMemberValue<int>("id") ?? 0;
+            animatingItemId_fromTreeViewExpandAnimator = treeViewAnimatorSetup?.GetMemberValue("item")?.GetMemberValue("id")?.ToIntId() ?? 0;
 
         }
 
@@ -326,7 +332,9 @@ namespace VFolders
             }
             else
             {
-                window.InvokeMethod("ShowFolderContents", AssetDatabase.LoadAssetAtPath<DefaultAsset>(prevPath).GetInstanceID(), true);
+                var folderId = AssetDatabase.LoadAssetAtPath<DefaultAsset>(prevPath).GetInstanceID().ToIdType();
+
+                window.InvokeMethod("ShowFolderContents", folderId, true);
             }
 
         }
@@ -346,7 +354,9 @@ namespace VFolders
             }
             else
             {
-                window.InvokeMethod("ShowFolderContents", AssetDatabase.LoadAssetAtPath<DefaultAsset>(nextPath).GetInstanceID(), true);
+                var folderId = AssetDatabase.LoadAssetAtPath<DefaultAsset>(nextPath).GetInstanceID().ToIdType();
+
+                window.InvokeMethod("ShowFolderContents", folderId, true);
             }
 
         }
