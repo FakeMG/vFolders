@@ -1,0 +1,9 @@
+{
+  "name": "com.fakemg.vfolders",
+  "displayName": "vFolders",
+  "version": "1.0.0",
+  "description": "Clone of vFolders",
+  "author": {
+    "name": "FakeMG"
+  }
+}
